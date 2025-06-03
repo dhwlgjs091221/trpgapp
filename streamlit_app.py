@@ -4,7 +4,7 @@ from websocket_client import setup_websocket
 from config import SUPABASE_URL
 from config import SUPABASE_KEY
 from config import STORAGE_BUCKET
-from config import WEBSOCKET_SURVER_URL
+from config import WEBSOCKET_SERVER_URL
 
 st.set_page_config(layout="wide")
 
