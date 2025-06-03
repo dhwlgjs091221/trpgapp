@@ -5,14 +5,10 @@ from config import SUPABASE_URL, SUPABASE_KEY, STORAGE_BUCKET, WEBSOCKET_SERVER_
 import streamlit_drawable_canvas as canvas
 import asyncio
 import threading
-import time
 
 st.set_page_config(layout="wide")
 
-# --- 페이지 탭 ---
-page = st.tabs(["TRPG 메인", "캐릭터 생성", "설정"])
-
-# --- 웹소켓 백그라운드 수신 처리 ---
+# --- 웹소켓 메시지 수신 백그라운드 처리 ---
 if "ws_messages" not in st.session_state:
     st.session_state.ws_messages = []
 if "ws_running" not in st.session_state:
@@ -24,12 +20,17 @@ def websocket_receiver_loop():
     async def runner():
         async for msg in receive_messages():
             st.session_state.ws_messages.append(msg)
+            # UI 갱신용
+            st.experimental_rerun()
     loop.run_until_complete(runner())
 
 if not st.session_state.ws_running:
     setup_websocket(WEBSOCKET_SERVER_URL)
     threading.Thread(target=websocket_receiver_loop, daemon=True).start()
     st.session_state.ws_running = True
+
+# --- 페이지 탭 ---
+page = st.tabs(["TRPG 메인", "캐릭터 생성", "설정"])
 
 # --- TRPG 메인 페이지 ---
 with page[0]:
@@ -44,24 +45,22 @@ with page[0]:
         grid_cells = 16
         cell_size = canvas_size // grid_cells
 
-        # 배경에 격자 무늬 만들기 (canvas 자체에 grid 옵션 없으니 배경 이미지 대신 CSS 격자 스타일로 격자 느낌)
+        drawing_mode = st.radio("그리기 모드", ("freedraw", "select", "transform", "line"), horizontal=True)
+
+        # streamlit_drawable_canvas에 배경 격자 그리기: 투명 배경에 CSS로 격자 표시
         grid_style = f"""
             <style>
             .grid-background {{
                 background-image:
-                  linear-gradient(to right, #bbb 1px, transparent 1px),
-                  linear-gradient(to bottom, #bbb 1px, transparent 1px);
+                  linear-gradient(to right, #ccc 1px, transparent 1px),
+                  linear-gradient(to bottom, #ccc 1px, transparent 1px);
                 background-size: {cell_size}px {cell_size}px;
                 width: {canvas_size}px;
                 height: {canvas_size}px;
-                position: relative;
                 }}
             </style>
         """
         st.markdown(grid_style, unsafe_allow_html=True)
-        st.markdown('<div class="grid-background">', unsafe_allow_html=True)
-
-        drawing_mode = st.radio("그리기 모드", ("freedraw", "select", "transform", "line"), horizontal=True)
 
         canvas_result = canvas.st_canvas(
             stroke_width=3,
@@ -73,35 +72,30 @@ with page[0]:
             key="canvas",
         )
 
-        st.markdown("</div>", unsafe_allow_html=True)
-
         # 선택된 도형 삭제 기능
         if drawing_mode == "select":
             if st.button("선택된 도형 삭제"):
                 if canvas_result.json_data and "objects" in canvas_result.json_data:
                     new_objects = [obj for obj in canvas_result.json_data["objects"] if not obj.get("active", False)]
-                    canvas_result.json_data["objects"] = new_objects
-                    st.experimental_rerun()
+                    # 이거는 그냥 상태에 반영 못함, 다시 그리기 위해선 저장 후 재로딩 필요
+                    st.warning("삭제 후 다시 그리기 위해 페이지를 새로고침해주세요.")
                 else:
                     st.info("선택된 도형이 없습니다.")
 
     with col2:
-        st.write("채팅창 (입력창은 아래)")
+        st.write("채팅")
 
-        # 채팅 내역 출력
-        chat_display = st.empty()
-        chat_display.text_area("채팅 기록", value="\n".join(st.session_state.ws_messages + st.session_state.get("chat_history", [])),
-                               height=550, max_chars=None, key="chat_area", disabled=True)
+        chat_area = st.empty()
+        chat_area.text_area("채팅 기록", value="\n".join(st.session_state.ws_messages), height=600, disabled=True)
 
-    # 채팅 입력창은 페이지 맨 아래 고정
-    new_msg = st.text_input("메시지 입력", key="chat_input")
-    send_clicked = st.button("전송")
+        new_msg = st.text_input("메시지 입력", key="chat_input")
+        send_clicked = st.button("전송")
 
-    if send_clicked and new_msg.strip():
-        st.session_state.ws_messages.append(f"나: {new_msg}")
-        asyncio.run(send_message(new_msg))  # 웹소켓으로 메시지 전송
-        st.session_state.chat_input = ""  # 입력 초기화
-        st.experimental_rerun()
+        if send_clicked and new_msg.strip():
+            st.session_state.ws_messages.append(f"나: {new_msg}")
+            asyncio.run(send_message(new_msg))
+            st.session_state.chat_input = ""
+            st.experimental_rerun()
 
 # --- 캐릭터 생성 페이지 ---
 with page[1]:
