@@ -18,24 +18,29 @@ st.markdown("""
     }
     .fixed-chat-wrapper {
         position: fixed;
-        bottom: 20px;
-        right: 20px;
-        width: 300px;
-        background-color: #f1f1f1;
+        bottom: 10px;
+        right: 10px;
+        width: 280px;
+        background-color: #f9f9f9;
         border: 1px solid #ccc;
-        border-radius: 10px;
-        padding: 10px;
+        border-radius: 8px;
+        padding: 8px;
         z-index: 9999;
+        font-size: 14px;
     }
     .fixed-chat-wrapper textarea {
         width: 100%;
-        height: 150px;
+        height: 200px;
+        resize: none;
+        font-size: 12px;
     }
     .fixed-chat-wrapper input[type="text"] {
         width: 70%;
+        font-size: 12px;
     }
     .fixed-chat-wrapper button {
-        width: 25%;
+        width: 28%;
+        font-size: 12px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -45,8 +50,6 @@ tabs = st.tabs(["TRPG 메인", "캐릭터 생성", "설정"])
 
 # --- TRPG 메인 ---
 with tabs[0]:
-    st.title("16x16 격자 TRPG 보드")
-
     # 도구 바: 그리기/지우개 선택 (가로 배치)
     tool_col1, tool_col2, tool_col3 = st.columns([1, 1, 8])
     with tool_col1:
@@ -55,13 +58,11 @@ with tabs[0]:
     # 레이아웃: 보드
     board_col, _ = st.columns([4, 1])
     with board_col:
-        st.subheader("격자 보드 및 그림")
-
         canvas_size = 800
         grid_cells = 16
         cell_size = canvas_size // grid_cells
 
-        drawing_mode = "freedraw" if drawing_tool == "펜" else "freedraw"
+        drawing_mode = "freedraw"
         stroke_color = "#000000" if drawing_tool == "펜" else "#ffffff"
 
         canvas_result = canvas.st_canvas(
@@ -78,7 +79,7 @@ with tabs[0]:
     chat_log = "\n".join(st.session_state.get("chat_history", []))
     chat_html = f"""
     <div class='fixed-chat-wrapper'>
-        <h4>💬 채팅</h4>
+        <b>💬 채팅</b>
         <textarea readonly id='chat_log'>{chat_log}</textarea><br>
         <input type='text' id='chat_input' name='msg' placeholder='메시지 입력'>
         <button onclick="sendMessage()">전송</button>
