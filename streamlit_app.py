@@ -1,7 +1,7 @@
 import streamlit as st
 from character_creator import character_creator_page
 from websocket_client import setup_websocket
-from config import SUPABASE_URL, SUPABASE_KEY, SUPABASE_BUCKET, WEBSOCKET_SERVER_URL
+from con import SUPABASE_URL, SUPABASE_KEY, SUPABASE_BUCKET, WEBSOCKET_SERVER_URL
 
 st.set_page_config(layout="wide")
 
