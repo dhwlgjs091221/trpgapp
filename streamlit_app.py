@@ -1,6 +1,6 @@
 import streamlit as st
 from character_creator import character_creator_page
-from websocket_client import setup_websocket, send_message, receive_messages
+from websocket_client import start_websocket as setup_websocket, send_message, get_received_messages as receive_messages
 from config import SUPABASE_URL, SUPABASE_KEY, STORAGE_BUCKET, WEBSOCKET_SERVER_URL
 import streamlit_drawable_canvas as canvas
 import asyncio
