@@ -255,4 +255,198 @@ export default function GameApp() {
               overflowY: "auto",
             }}
           >
-            <h3>캐릭터 생성</h
+            <h3>캐릭터 생성</h3>
+            <input
+              placeholder="캐릭터 이름"
+              value={charNameInput}
+              onChange={(e) => setCharNameInput(e.target.value)}
+              style={{ width: "100%", marginBottom: 8, padding: 6 }}
+            />
+            <input type="file" accept="image/*" onChange={handleCharImgChange} />
+            {charImgInput && (
+              <img
+                src={charImgInput}
+                alt="preview"
+                style={{ width: 80, height: 80, objectFit: "cover", marginTop: 8 }}
+              />
+            )}
+            <button
+              onClick={createCharacter}
+              style={{
+                marginTop: 10,
+                padding: "6px 10px",
+                cursor: "pointer",
+                width: "100%",
+              }}
+            >
+              생성
+            </button>
+
+            <h3 style={{ marginTop: 20 }}>캐릭터 목록</h3>
+            <div>
+              {characters.length === 0 && <p>생성된 캐릭터가 없습니다.</p>}
+              {characters.map((char) => (
+                <div
+                  key={char.id}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    marginBottom: 8,
+                    background: "#e0e0e0",
+                    padding: 6,
+                    borderRadius: 4,
+                  }}
+                >
+                  <img
+                    src={char.img}
+                    alt={char.name}
+                    style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: "50%",
+                      objectFit: "cover",
+                      marginRight: 8,
+                    }}
+                  />
+                  <span style={{ flex: 1 }}>{char.name}</span>
+                  <button
+                    onClick={() => deleteCharacter(char.id)}
+                    style={{
+                      background: "red",
+                      color: "white",
+                      border: "none",
+                      padding: "4px 8px",
+                      cursor: "pointer",
+                      borderRadius: 4,
+                    }}
+                  >
+                    삭제
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 게임 모드 화면 */}
+        {gameMode && (
+          <div
+            style={{
+              backgroundColor: "white",
+              padding: 10,
+              borderRadius: 6,
+              marginTop: 10,
+              flex: 1,
+              overflowY: "auto",
+            }}
+          >
+            <h2>게임 화면</h2>
+            <button
+              onClick={() => setGameMode(false)}
+              style={{ marginBottom: 10, cursor: "pointer" }}
+            >
+              게임 종료
+            </button>
+            <div
+              style={{
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 10,
+              }}
+            >
+              {characters.length === 0 && <p>불러올 캐릭터가 없습니다.</p>}
+              {characters.map((char) => (
+                <div
+                  key={char.id}
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: "50%",
+                    overflow: "hidden",
+                    border: "2px solid #2196F3",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    cursor: "pointer",
+                  }}
+                  title={char.name}
+                >
+                  <img
+                    src={char.img}
+                    alt={char.name}
+                    style={{
+                      width: "100%",
+                      height: "100%",
+                      objectFit: "cover",
+                      borderRadius: "50%",
+                    }}
+                  />
+                  <small>{char.name}</small>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 채팅 영역 */}
+        <div
+          style={{
+            marginTop: 10,
+            background: "white",
+            borderRadius: 6,
+            padding: 10,
+            maxHeight: "30vh",
+            display: "flex",
+            flexDirection: "column",
+          }}
+        >
+          <div
+            style={{
+              flex: 1,
+              overflowY: "auto",
+              border: "1px solid #ddd",
+              padding: 6,
+              marginBottom: 6,
+              background: "#fafafa",
+            }}
+          >
+            {chatMessages.length === 0 && <p>채팅 메시지가 없습니다.</p>}
+            {chatMessages.map((msg, idx) => (
+              <div key={idx} style={{ marginBottom: 4 }}>
+                {msg}
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex" }}>
+            <input
+              style={{ flex: 1, padding: 6 }}
+              value={chatInput}
+              onChange={(e) => setChatInput(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") sendChat();
+              }}
+              placeholder="채팅 입력 후 Enter"
+              disabled={gameMode} // 게임 모드에선 채팅 비활성화(원하면 변경 가능)
+            />
+            <button
+              onClick={sendChat}
+              style={{
+                marginLeft: 6,
+                padding: "6px 12px",
+                cursor: "pointer",
+                backgroundColor: "#2196F3",
+                color: "white",
+                border: "none",
+                borderRadius: 4,
+              }}
+              disabled={gameMode}
+            >
+              전송
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
