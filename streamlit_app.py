@@ -3,7 +3,7 @@ from character_creator import character_creator_page
 from websocket_client import setup_websocket
 from config import SUPABASE_URL
 from config import SUPABASE_KEY
-from config import SUPABASE_BUCKET
+from config import STORAGE_BUCKET
 from config import WEBSOCKET_SURVER_URL
 
 st.set_page_config(layout="wide")
