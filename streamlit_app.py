@@ -16,7 +16,7 @@ st.markdown("""
     html, body, [class*="css"]  {
         overflow: hidden;
     }
-    #fixed-chat-box {
+    .fixed-chat-wrapper {
         position: fixed;
         bottom: 20px;
         right: 20px;
@@ -27,9 +27,15 @@ st.markdown("""
         padding: 10px;
         z-index: 9999;
     }
-    #fixed-chat-box textarea {
+    .fixed-chat-wrapper textarea {
         width: 100%;
         height: 150px;
+    }
+    .fixed-chat-wrapper input[type="text"] {
+        width: 70%;
+    }
+    .fixed-chat-wrapper button {
+        width: 25%;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -55,11 +61,12 @@ with tabs[0]:
         grid_cells = 16
         cell_size = canvas_size // grid_cells
 
-        drawing_mode = "freedraw" if drawing_tool == "펜" else "eraser"
+        drawing_mode = "freedraw" if drawing_tool == "펜" else "freedraw"
+        stroke_color = "#000000" if drawing_tool == "펜" else "#ffffff"
 
         canvas_result = canvas.st_canvas(
             stroke_width=4,
-            stroke_color="#000000",
+            stroke_color=stroke_color,
             background_color="#ffffff",
             height=canvas_size,
             width=canvas_size,
@@ -68,25 +75,36 @@ with tabs[0]:
         )
 
     # ✅ 고정 채팅창 영역 (HTML로 직접 삽입)
-    chat_html = """
-    <div id="fixed-chat-box">
+    chat_log = "\n".join(st.session_state.get("chat_history", []))
+    chat_html = f"""
+    <div class='fixed-chat-wrapper'>
         <h4>💬 채팅</h4>
-        <form action="#" method="post">
-            <textarea readonly id="chat_log">{chat_log}</textarea><br>
-            <input type="text" id="chat_input" name="msg" placeholder="메시지 입력" style="width: 75%;">
-            <button type="button" onclick="sendChat()">전송</button>
-        </form>
+        <textarea readonly id='chat_log'>{chat_log}</textarea><br>
+        <input type='text' id='chat_input' name='msg' placeholder='메시지 입력'>
+        <button onclick="sendMessage()">전송</button>
     </div>
     <script>
-    const input = window.parent.document.getElementById("chat_input")
-    if (input) input.addEventListener("keypress", function(e) {
-        if (e.key === "Enter") {
+    function sendMessage() {{
+        const input = window.parent.document.getElementById('chat_input');
+        const value = input.value;
+        if (value.trim() !== '') {{
+            const streamlitInput = window.parent.document.querySelectorAll('input[data-testid="stTextInput"]')[0];
+            if (streamlitInput) {{
+                streamlitInput.value = value;
+                const inputEvent = new Event('input', {{ bubbles: true }});
+                streamlitInput.dispatchEvent(inputEvent);
+                input.value = '';
+            }}
+        }}
+    }}
+    window.parent.document.getElementById('chat_input')?.addEventListener("keypress", function(e) {{
+        if (e.key === "Enter") {{
             e.preventDefault();
-            window.parent.document.querySelector("button").click();
-        }
-    });
+            sendMessage();
+        }}
+    }});
     </script>
-    """.format(chat_log="\n".join(st.session_state.get("chat_history", [])))
+    """
     st.markdown(chat_html, unsafe_allow_html=True)
 
     # 실질적 채팅 처리 (숨겨진 영역)
@@ -97,7 +115,6 @@ with tabs[0]:
     if new_msg.strip():
         st.session_state.chat_history.append(f"나: {new_msg}")
         send_message(new_msg)
-        new_msg = ""
 
     received_msgs = receive_messages()
     if received_msgs:
