@@ -10,11 +10,26 @@ import streamlit_drawable_canvas as canvas
 import asyncio
 import threading
 
-# 전체 화면 고정 스타일 삽입 (스크롤 방지)
+# 전체 화면 고정 스타일 삽입 (스크롤 방지 + 채팅창 고정 위치 설정)
 st.markdown("""
     <style>
     html, body, [class*="css"]  {
         overflow: hidden;
+    }
+    #fixed-chat-box {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 300px;
+        background-color: #f1f1f1;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 10px;
+        z-index: 9999;
+    }
+    #fixed-chat-box textarea {
+        width: 100%;
+        height: 150px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -31,7 +46,7 @@ with tabs[0]:
     with tool_col1:
         drawing_tool = st.radio("도구", ["펜", "지우개"], horizontal=True, label_visibility="collapsed")
 
-    # 레이아웃: 보드 + 채팅창 (채팅창은 아래쪽 고정)
+    # 레이아웃: 보드
     board_col, _ = st.columns([4, 1])
     with board_col:
         st.subheader("격자 보드 및 그림")
@@ -52,29 +67,41 @@ with tabs[0]:
             key="main_canvas"
         )
 
-    st.divider()
+    # ✅ 고정 채팅창 영역 (HTML로 직접 삽입)
+    chat_html = """
+    <div id="fixed-chat-box">
+        <h4>💬 채팅</h4>
+        <form action="#" method="post">
+            <textarea readonly id="chat_log">{chat_log}</textarea><br>
+            <input type="text" id="chat_input" name="msg" placeholder="메시지 입력" style="width: 75%;">
+            <button type="button" onclick="sendChat()">전송</button>
+        </form>
+    </div>
+    <script>
+    const input = window.parent.document.getElementById("chat_input")
+    if (input) input.addEventListener("keypress", function(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            window.parent.document.querySelector("button").click();
+        }
+    });
+    </script>
+    """.format(chat_log="\n".join(st.session_state.get("chat_history", [])))
+    st.markdown(chat_html, unsafe_allow_html=True)
 
-    # 채팅 기능 - 하단 고정
-    st.subheader("💬 채팅")
+    # 실질적 채팅 처리 (숨겨진 영역)
     if "chat_history" not in st.session_state:
         st.session_state.chat_history = []
 
-    # 채팅 메시지 입력
-    chat_col1, chat_col2 = st.columns([5, 1])
-    with chat_col1:
-        new_msg = st.text_input("", label_visibility="collapsed", placeholder="메시지 입력")
-    with chat_col2:
-        if st.button("전송") and new_msg.strip():
-            st.session_state.chat_history.append(f"나: {new_msg}")
-            send_message(new_msg)
+    new_msg = st.text_input("숨김 채팅 입력", label_visibility="collapsed", key="hidden_chat_input")
+    if new_msg.strip():
+        st.session_state.chat_history.append(f"나: {new_msg}")
+        send_message(new_msg)
+        new_msg = ""
 
-    # 수신 메시지 출력
     received_msgs = receive_messages()
     if received_msgs:
         st.session_state.chat_history.extend(received_msgs)
-
-    chat_display = st.empty()
-    chat_display.text_area("채팅 기록", value="\n".join(st.session_state.chat_history), height=200, disabled=True)
 
 # --- 캐릭터 생성 ---
 with tabs[1]:
