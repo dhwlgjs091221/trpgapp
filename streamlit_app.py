@@ -6,6 +6,50 @@ import streamlit_drawable_canvas as canvas
 import asyncio
 import threading
 
+# 페이지 레이아웃 고정 + 스크롤 제거 CSS
+st.markdown(
+    """
+    <style>
+    /* 스크롤 안보이게 */
+    html, body, #root, .main {
+        overflow: hidden;
+        height: 100vh;
+    }
+    /* 캔버스 격자 스타일 */
+    .grid-background {
+        background-image:
+          linear-gradient(to right, #ccc 1px, transparent 1px),
+          linear-gradient(to bottom, #ccc 1px, transparent 1px);
+        background-size: 40px 40px;  /* 셀 크기 40px */
+        width: 640px;
+        height: 640px;
+    }
+    /* 툴바 스타일 */
+    .toolbar {
+        display: flex;
+        gap: 15px;
+        padding: 10px;
+        background-color: #eee;
+        border-bottom: 1px solid #ccc;
+        align-items: center;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    }
+    .toolbar button {
+        background: #f5f5f5;
+        border: 1px solid #ccc;
+        padding: 6px 12px;
+        border-radius: 3px;
+        cursor: pointer;
+    }
+    .toolbar button.selected {
+        background: #0078d7;
+        color: white;
+        border-color: #0078d7;
+    }
+    </style>
+    """, unsafe_allow_html=True
+)
+
 st.set_page_config(layout="wide")
 
 # --- 웹소켓 메시지 수신 백그라운드 처리 ---
@@ -20,7 +64,6 @@ def websocket_receiver_loop():
     async def runner():
         async for msg in receive_messages():
             st.session_state.ws_messages.append(msg)
-            # UI 갱신용
             st.experimental_rerun()
     loop.run_until_complete(runner())
 
@@ -45,42 +88,36 @@ with page[0]:
         grid_cells = 16
         cell_size = canvas_size // grid_cells
 
-        drawing_mode = st.radio("그리기 모드", ("freedraw", "select", "transform", "line"), horizontal=True)
+        # 도구 상태: pen, eraser, line, rect 등 - 기본 pen
+        if "tool" not in st.session_state:
+            st.session_state.tool = "freedraw"
 
-        # streamlit_drawable_canvas에 배경 격자 그리기: 투명 배경에 CSS로 격자 표시
-        grid_style = f"""
-            <style>
-            .grid-background {{
-                background-image:
-                  linear-gradient(to right, #ccc 1px, transparent 1px),
-                  linear-gradient(to bottom, #ccc 1px, transparent 1px);
-                background-size: {cell_size}px {cell_size}px;
-                width: {canvas_size}px;
-                height: {canvas_size}px;
-                }}
-            </style>
-        """
-        st.markdown(grid_style, unsafe_allow_html=True)
+        # 윈도우 10 스타일 툴바를 상단에 html 버튼 대신 Streamlit 버튼으로 구현
+        tools = [
+            ("펜", "freedraw"),
+            ("지우개", "eraser"),
+            ("선", "line"),
+            ("사각형", "rect"),
+            ("원", "circle"),
+        ]
+
+        # 툴 버튼 가로 바 구현
+        cols = st.columns(len(tools))
+        for i, (label, tool_val) in enumerate(tools):
+            is_selected = (st.session_state.tool == tool_val)
+            btn_label = f"**{label}**" if is_selected else label
+            if cols[i].button(btn_label):
+                st.session_state.tool = tool_val
 
         canvas_result = canvas.st_canvas(
             stroke_width=3,
-            stroke_color="#000",
+            stroke_color="#000" if st.session_state.tool != "eraser" else "#fff",
             background_color="#fff",
             height=canvas_size,
             width=canvas_size,
-            drawing_mode=drawing_mode,
+            drawing_mode=st.session_state.tool,
             key="canvas",
         )
-
-        # 선택된 도형 삭제 기능
-        if drawing_mode == "select":
-            if st.button("선택된 도형 삭제"):
-                if canvas_result.json_data and "objects" in canvas_result.json_data:
-                    new_objects = [obj for obj in canvas_result.json_data["objects"] if not obj.get("active", False)]
-                    # 이거는 그냥 상태에 반영 못함, 다시 그리기 위해선 저장 후 재로딩 필요
-                    st.warning("삭제 후 다시 그리기 위해 페이지를 새로고침해주세요.")
-                else:
-                    st.info("선택된 도형이 없습니다.")
 
     with col2:
         st.write("채팅")
