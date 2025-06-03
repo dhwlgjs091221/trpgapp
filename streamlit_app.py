@@ -15,8 +15,6 @@ html, body, #root, #root > div, #root > div > div, #root > div > div > div {
 
 st.markdown(hide_scroll_css, unsafe_allow_html=True)
 
-st.title("보드와 채팅창 예제 (스크롤 없음)")
-
 # 레이아웃: 좌측 보드, 우측 채팅창
 container_css = """
 <style>
@@ -29,11 +27,16 @@ container_css = """
 .board {
     flex: 3;
     background-color: #ddd;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-size: 24px;
+    display: grid;
+    grid-template-columns: repeat(16, 1fr);
+    grid-template-rows: repeat(16, 1fr);
+    gap: 2px;
     border-radius: 8px;
+}
+.tile {
+    background-color: #bbb;
+    border-radius: 3px;
+    aspect-ratio: 1 / 1;
 }
 .chat {
     flex: 1;
@@ -81,11 +84,14 @@ st.markdown(container_css, unsafe_allow_html=True)
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
-# UI 출력
 st.markdown('<div class="flex-container">', unsafe_allow_html=True)
 
-# 보드 영역
-st.markdown('<div class="board">보드 영역</div>', unsafe_allow_html=True)
+# 보드 영역 - 16x16 타일 만들기
+board_html = '<div class="board">'
+for _ in range(16*16):
+    board_html += '<div class="tile"></div>'
+board_html += '</div>'
+st.markdown(board_html, unsafe_allow_html=True)
 
 # 채팅창 영역
 st.markdown('<div class="chat">', unsafe_allow_html=True)
